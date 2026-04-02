@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+uploads
+certs
+coverage
+.DS_Store

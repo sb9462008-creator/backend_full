@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hurgelt-api
+  namespace: hurgelt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hurgelt-api
+  template:
+    metadata:
+      labels:
+        app: hurgelt-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/your-org/hurgelt-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: hurgelt-api-config
+            - secretRef:
+                name: hurgelt-api-secret
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: hurgelt-uploads
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hurgelt-api
+  namespace: hurgelt
+spec:
+  selector:
+    app: hurgelt-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 4000

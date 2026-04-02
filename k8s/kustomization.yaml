@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: hurgelt
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - postgres-pvc.yaml
+  - uploads-pvc.yaml
+  - postgres.yaml
+  - redis.yaml
+  - api.yaml
+  - ingress.yaml

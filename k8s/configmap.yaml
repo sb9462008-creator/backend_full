@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hurgelt-api-config
+  namespace: hurgelt
+data:
+  NODE_ENV: production
+  PORT: "4000"
+  JWT_EXPIRES_IN: 7d
+  SMTP_PORT: "587"
+  SMTP_FROM: notifications@hurgelt.local
+  UPLOAD_DIR: /app/uploads
+  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/hurgelt?schema=public
+  REDIS_URL: redis://redis:6379
