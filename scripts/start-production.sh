@@ -12,8 +12,5 @@ for var_name in $required_vars; do
   fi
 done
 
-echo "Running Prisma schema sync..."
-npx prisma db push --accept-data-loss
-
 echo "Starting backend..."
 exec node dist/src/main.js
