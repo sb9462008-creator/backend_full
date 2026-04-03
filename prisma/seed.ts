@@ -167,7 +167,7 @@ async function main() {
       description: "Esports болон өдөр тутмын creator хэрэглээнд тохирсон 1080p, entry-level 1440p видео карт.",
       priceCents: 42900,
       stock: 11,
-      imageUrl: "https://images.unsplash.com/photo-1593640408182-31c228c1f4c1?auto=format&fit=crop&w=900&q=80",
+      imageUrl: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=900&q=80",
     },
     {
       sku: "COOLER-GALAHAD-360",
@@ -222,7 +222,7 @@ async function main() {
       description: "Өрсөлдөөнт shooter тоглоомд зориулсан 24.5 инчийн 360Hz esports дэлгэц.",
       priceCents: 67900,
       stock: 7,
-      imageUrl: "https://images.unsplash.com/photo-1546538915-a9e2c8d8d5c8?auto=format&fit=crop&w=900&q=80",
+      imageUrl: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=80",
     },
     {
       sku: "PC-AURORA-1440P",
