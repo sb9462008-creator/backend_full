@@ -29,7 +29,17 @@ const orderInclude = {
   },
 } satisfies Prisma.OrderInclude;
 
+const basicOrderInclude = {
+  items: {
+    include: {
+      product: true,
+    },
+  },
+  delivery: true,
+} satisfies Prisma.OrderInclude;
+
 type OrderWithRelations = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
+type BasicOrderWithRelations = Prisma.OrderGetPayload<{ include: typeof basicOrderInclude }>;
 
 function formatPrice(amountCents: number) {
   return new Intl.NumberFormat("mn-MN", {
@@ -49,11 +59,11 @@ function escapeHtml(value: string) {
 }
 
 function generateOrderNumber() {
-  return `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  return ORD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()};
 }
 
 function generateTrackingCode() {
-  return `TRK-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  return TRK-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()};
 }
 
 function presentOrderStatus(order: OrderWithRelations) {
@@ -85,8 +95,47 @@ function serializeOrder(order: OrderWithRelations) {
   };
 }
 
+function normalizeOrderWithRelations(order: OrderWithRelations | BasicOrderWithRelations): OrderWithRelations {
+  const delivery = order.delivery;
+
+  return {
+    ...(order as Omit<OrderWithRelations, "delivery">),
+    delivery: delivery
+      ? {
+          ...(delivery as NonNullable<OrderWithRelations["delivery"]>),
+          events: (delivery as NonNullable<OrderWithRelations["delivery"]> & { events?: NonNullable<OrderWithRelations["delivery"]>["events"] })
+            .events ?? [],
+          proof: (delivery as NonNullable<OrderWithRelations["delivery"]> & { proof?: NonNullable<OrderWithRelations["delivery"]>["proof"] })
+            .proof ?? null,
+        }
+      : null,
+  };
+}
+
 export class OrdersService {
-  private async sendPaymentCompletedEmail(input: {
+  private async findOrderWithSafeRelations(where: Prisma.OrderWhereInput) {
+    try {
+      const order = await prisma.order.findFirst({
+        where,
+        include: orderInclude,
+      });
+
+      return order ? normalizeOrderWithRelations(order) : null;
+    } catch (error) {
+      logger.warn("Falling back to basic order relation query", {
+        where,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      const fallbackOrder = await prisma.order.findFirst({
+        where,
+        include: basicOrderInclude,
+      });
+
+      return fallbackOrder ? normalizeOrderWithRelations(fallbackOrder) : null;
+    }
+  }
+private async sendPaymentCompletedEmail(input: {
     email: string;
     customerName: string;
     storefrontName: string;
@@ -98,21 +147,21 @@ export class OrdersService {
     };
   }) {
     const storefrontUrl = env.FRONTEND_URL ?? "https://localhost:3000";
-    const ordersUrl = `${storefrontUrl}/orders/${input.order.id}`;
+    const ordersUrl = ${storefrontUrl}/orders/${input.order.id};
 
     await sendMail({
       to: input.email,
-      subject: `${input.storefrontName} - Payment completed (${input.order.orderNumber})`,
+      subject: ${input.storefrontName} - Payment completed (${input.order.orderNumber}),
       text: [
-        `Сайн байна уу, ${input.customerName}.`,
+        Сайн байна уу, ${input.customerName}.,
         "",
         "Таны төлбөр амжилттай бүртгэгдлээ.",
-        `Захиалгын дугаар: ${input.order.orderNumber}`,
-        `Төлбөрийн төрөл: ${input.payment.method === "CARD" ? "Visa / Mastercard" : "QR төлбөр"}`,
-        `Төлбөрийн тэмдэглэл: ${input.payment.summary}`,
-        `Төлсөн дүн: ${formatPrice(input.order.totalAmountCents)}`,
+        Захиалгын дугаар: ${input.order.orderNumber},
+        Төлбөрийн төрөл: ${input.payment.method === "CARD" ? "Visa / Mastercard" : "QR төлбөр"},
+        Төлбөрийн тэмдэглэл: ${input.payment.summary},
+        Төлсөн дүн: ${formatPrice(input.order.totalAmountCents)},
         "",
-        `Захиалгын дэлгэрэнгүй: ${ordersUrl}`,
+        Захиалгын дэлгэрэнгүй: ${ordersUrl},
         "",
         "Одоо бид таны захиалгыг баталгаажуулж, хүргэлтэд бэлдэнэ.",
       ].join("\n"),
@@ -139,39 +188,38 @@ export class OrdersService {
     order: OrderWithRelations;
   }) {
     const storefrontUrl = env.FRONTEND_URL ?? "https://localhost:3000";
-    const ordersUrl = `${storefrontUrl}/orders/${input.order.id}`;
+    const ordersUrl = ${storefrontUrl}/orders/${input.order.id};
     const trackingUrl = input.order.delivery?.trackingCode
-      ? `${storefrontUrl}/track/${input.order.delivery.trackingCode}`
+      ? ${storefrontUrl}/track/${input.order.delivery.trackingCode}
       : ordersUrl;
     const itemLines = input.order.items.map((item) => {
       const lineTotal = item.unitPriceCents * item.quantity;
-      return `- ${item.product.name} x${item.quantity} — ${formatPrice(lineTotal)}`;
+      return - ${item.product.name} x${item.quantity} — ${formatPrice(lineTotal)};
     });
     const htmlItemLines = input.order.items
       .map((item) => {
         const lineTotal = item.unitPriceCents * item.quantity;
-        return `<li>${escapeHtml(item.product.name)} x${item.quantity} — ${escapeHtml(formatPrice(lineTotal))}</li>`;
+        return <li>${escapeHtml(item.product.name)} x${item.quantity} — ${escapeHtml(formatPrice(lineTotal))}</li>;
       })
       .join("");
-
-    await sendMail({
+await sendMail({
       to: input.email,
-      subject: `${input.storefrontName} - Order confirmed (${input.order.orderNumber})`,
+      subject: ${input.storefrontName} - Order confirmed (${input.order.orderNumber}),
       text: [
-        `Сайн байна уу, ${input.customerName}.`,
+        Сайн байна уу, ${input.customerName}.,
         "",
         "Таны захиалга амжилттай бүртгэгдлээ.",
-        `Захиалгын дугаар: ${input.order.orderNumber}`,
-        `Хяналтын код: ${input.order.delivery?.trackingCode ?? "Одоогоор үүсээгүй"}`,
-        `Хүргэлтийн хаяг: ${input.order.shippingAddress}`,
+        Захиалгын дугаар: ${input.order.orderNumber},
+        Хяналтын код: ${input.order.delivery?.trackingCode ?? "Одоогоор үүсээгүй"},
+        Хүргэлтийн хаяг: ${input.order.shippingAddress},
         "",
         "Захиалсан бараанууд:",
         ...itemLines,
         "",
-        `Нийт төлбөр: ${formatPrice(input.order.totalAmountCents)}`,
+        Нийт төлбөр: ${formatPrice(input.order.totalAmountCents)},
         "",
-        `Захиалгын дэлгэрэнгүй: ${ordersUrl}`,
-        `Хүргэлт хянах: ${trackingUrl}`,
+        Захиалгын дэлгэрэнгүй: ${ordersUrl},
+        Хүргэлт хянах: ${trackingUrl},
         "",
         "XADE-с захиалга өгсөнд баярлалаа.",
       ].join("\n"),
@@ -270,8 +318,7 @@ export class OrdersService {
     if (products.length !== uniqueProductIds.length) {
       throw new ApiError(400, "One or more products are unavailable");
     }
-
-    const customer = await prisma.user.findFirst({
+const customer = await prisma.user.findFirst({
       where: {
         id: input.customerId,
         tenantId: input.tenantId,
@@ -363,7 +410,7 @@ export class OrdersService {
             }),
           },
         },
-        include: orderInclude,
+        include: basicOrderInclude,
       });
 
       for (const item of input.items) {
@@ -377,7 +424,7 @@ export class OrdersService {
         });
       }
 
-      return createdOrder;
+      return normalizeOrderWithRelations(createdOrder);
     });
 
     void this.sendCustomerOrderEmails({
@@ -400,26 +447,41 @@ export class OrdersService {
   }
 
   async listForCustomer(tenantId: string, customerId: string) {
-    const orders = await prisma.order.findMany({
-      where: {
+    try {
+      const orders = await prisma.order.findMany({
+        where: {
+          tenantId,
+          customerId,
+        },
+        orderBy: { createdAt: "desc" },
+        include: orderInclude,
+      });
+return orders.map(serializeOrder);
+    } catch (error) {
+      logger.warn("Falling back to basic customer orders query", {
         tenantId,
         customerId,
-      },
-      orderBy: { createdAt: "desc" },
-      include: orderInclude,
-    });
+        error: error instanceof Error ? error.message : String(error),
+      });
 
-    return orders.map(serializeOrder);
+      const orders = await prisma.order.findMany({
+        where: {
+          tenantId,
+          customerId,
+        },
+        orderBy: { createdAt: "desc" },
+        include: basicOrderInclude,
+      });
+
+      return orders.map((order) => serializeOrder(normalizeOrderWithRelations(order)));
+    }
   }
 
   async getForCustomer(tenantId: string, customerId: string, id: string) {
-    const order = await prisma.order.findFirst({
-      where: {
-        id,
-        tenantId,
-        customerId,
-      },
-      include: orderInclude,
+    const order = await this.findOrderWithSafeRelations({
+      id,
+      tenantId,
+      customerId,
     });
 
     if (!order) {
